@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+<script>
+var canvas, context, interval;
+var width=64, height=48;
+var tile;
+var unit, proj;
+var mx=0, my=0;
+
+var colors = {
+    "grass": "rgb(0,155,0)"
+};
+
+function loop() {
+    unit.forEach(function(u) {
+        u.move();
+    });
+    
+    proj = proj.filter(function(p) {
+        return p.distance < 100;
+    });
+    
+    proj.forEach(function(p) {
+        p.move();
+    });
+    
+    draw();
+}
+
+function draw() {
+    for (var x=0;x<width;x++) {
+        for (var y=0;y<height;y++) {
+            context.fillStyle = colors[tile[x][y]];
+            context.fillRect(x*10,y*10,10,10);
+        }
+    }
+    
+    unit.forEach(function(u) {
+        context.fillStyle = u.color;
+        context.fillRect(u.x*10,u.y*10,10,10);
+    });
+    
+    proj.forEach(function(p) {
+        context.fillStyle = p.color;
+        context.fillRect(p.x*10,p.y*10,5,5);
+    });
+}
+
+function dist(a, b) {
+    var distance = 0;
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    distance = Math.sqrt(dx*dx + dy*dy);
+    return distance;
+}
+
+function create_proj(a, b) {
+    var newproj = {};
+    newproj.x = a.x;
+    newproj.y = a.y;
+    
+    if (a.ai == "user")
+        newproj.color = "rgb(255,255,0)";
+    else
+        newproj.color = "rgb(255,0,255)";
+    
+    var angle = Math.atan2(b.x-a.x,b.y-a.y);
+    newproj.vx = Math.sin(angle);
+    newproj.vy = Math.cos(angle);
+    newproj.distance = 0;
+    
+    newproj.move = function() {
+        newproj.x += newproj.vx;
+        newproj.y += newproj.vy;
+        newproj.distance += 1;
+    };
+    
+    return newproj;
+}
+
+function create_unit(ai) {
+    var newunit = {};
+    newunit.ai = ai;
+    newunit.range = Math.floor(Math.random() * 20) + 1;
+    newunit.charge = Math.floor(Math.random() * 100);
+    newunit.hp = 100;
+    if (ai == "user") {
+        newunit.color = "rgb(0,255,0)";
+        newunit.x = 0 + Math.floor(Math.random()*20);
+        newunit.vx = 1;
+        newunit.vy = 0;
+    }
+    else {
+        newunit.color = "rgb(255,0,0)";
+        newunit.x = width - 1 - Math.floor(Math.random()*20);
+        newunit.vx = -1;
+        newunit.vy = 0;
+    }
+    
+    newunit.y = Math.floor(Math.random() * height);
+    newunit.target = null;
+    
+    newunit.move = function() {
+        if (!newunit.target) {
+            var closest = [];
+            unit.forEach(function(u) {
+                if (newunit.ai != u.ai) {
+                    var distance = dist(newunit, u);
+                    closest.push({"unit":u, "distance":distance});
+                }
+            });
+            closest.sort(function(a,b) {
+                return a - b;
+            });
+            newunit.target = closest[0].unit;
+        }
+        else {
+            var distance = dist(newunit, newunit.target);
+            
+            if (distance < newunit.range) {
+                newunit.vx = 0;
+                newunit.vy = 0;
+                if (newunit.charge >= 100) {
+                    newunit.attack();
+                }
+            }
+            else {
+                var angle = Math.atan2(newunit.target.x-newunit.x,newunit.target.y-newunit.y);
+                newunit.vx = Math.sin(angle)/2;
+                newunit.vy = Math.cos(angle)/2;
+            }
+        }
+    
+        newunit.x += newunit.vx;
+        newunit.y += newunit.vy;
+        
+        newunit.charge+=1;
+    };
+    
+    newunit.attack = function() {
+        //if (newunit.target) {
+            proj.push(create_proj(newunit, newunit.target));
+        //}
+        newunit.charge = 0;
+    };
+    
+    return newunit;
+}
+
+function create_party(ai) {
+    var newparty = {};
+    newparty.ai = ai;
+    newparty.unit = [];
+    for (var i=0;i<10;i++) {
+        newparty.unit[i] = create_unit(ai);
+    }
+    return newparty.unit;
+}
+
+window.onload = function() {
+    canvas = document.getElementById("canvas");
+    context = canvas.getContext("2d");
+    
+    canvas.onmousemove = function(e) {
+        mx = Math.floor(e.offsetX/10);
+        my = Math.floor(e.offsetY/10);
+    };
+    
+    tile = [];
+    for (var x=0;x<width;x++) {
+        tile[x] = [];
+        for (var y=0;y<height;y++) {
+            tile[x][y] = "grass";
+        }
+    }
+    
+    unit = create_party("user");
+    unit = unit.concat(create_party("cpu"));
+    proj = [];
+    
+    interval = window.setInterval(loop, 1000/60);
+};
+</script>
+<body>
+<canvas width="640" height="480" id="canvas"></canvas>
+</body>
+</html>
