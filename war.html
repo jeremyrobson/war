@@ -37,7 +37,7 @@ function draw() {
 function create_unit(side) {
     var newunit = {};
     newunit.id = Math.floor(Math.random() * 100000);
-    newunit.ai = "attack";
+    newunit.ai = "heal";
     newunit.side = side;
     newunit.range = Math.floor(Math.random() * 50) + 5;
     newunit.charge = Math.floor(Math.random() * 100);
