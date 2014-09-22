@@ -126,15 +126,15 @@ function create_disp(text, x, y, font, color) {
     return newdisp;
 }
 
-function create_proj(a, b, pwr, ai) {
+function create_proj(a, b) {
     var newproj = {};
     newproj.x = a.x;
     newproj.y = a.y;
-    newproj.pwr = pwr;
+    newproj.pwr = a.pwr;
     newproj.target = b;
     newproj.life = 100;
     
-    if (ai == "heal") {
+    if (a.ai == "heal" && a.side == b.side) {
         newproj.color = "rgb(0,255,255)";
         newproj.pwr = -newproj.pwr;
     }
@@ -158,7 +158,10 @@ function create_proj(a, b, pwr, ai) {
         if (newproj.distance < 1 && newproj.target.hp > 0) {
             newproj.life = 0;
             newproj.target.hp -= newproj.pwr;
-            newproj.target.target = a; //turn against attacker MAGIC CODE!
+            
+            if (newproj.target.side != a.side)
+                newproj.target.target = a; //turn against attacker
+            
             if (newproj.target.hp <= 0)
                 newproj.target.die();
         }
@@ -202,7 +205,7 @@ function load_unit(self, unit) {
         }
         
         if (!newunit.target) {
-            newunit.target = newunit.get_target(newunit.ai);
+            newunit.target = newunit.get_target();
         }
         else {
             newunit.act();
@@ -237,10 +240,13 @@ function load_unit(self, unit) {
         
         if (newunit.target.hp <= 0)
             newunit.target = null;
+            
+        if (newunit.side == newunit.target.side && newunit.target.hp >= newunit.target.maxhp / 2) //healed target to 50%
+            newunit.target = null;
     };
     
     newunit.attack = function() {
-        self.proj.push(create_proj(newunit, newunit.target, newunit.pwr, newunit.ai));
+        self.proj.push(create_proj(newunit, newunit.target));
         newunit.charge = 0;
     };
     
@@ -253,20 +259,16 @@ function load_unit(self, unit) {
             newunit.y = y;
     }
     
-    newunit.get_target = function(ai) {
+    newunit.get_target = function() {
         var target = null;
         var best = [];
-        if (ai == "heal") {
-            best = unit.filter(function(u) { //create list of ally targets
-                return u.id != newunit.id && u.hp > 0 && u.side == newunit.side;
+        if (newunit.ai == "heal") {
+            self.unit.filter(function(u) { //create list of injured allies
+                return u.id != newunit.id && u.side == newunit.side && u.hp > 0 && u.hp < u.maxhp / 2;
+            }).forEach(function(u) {
+                var distance = dist(newunit, u);
+                best.push({"unit":u, "distance":distance});
             });
-            console.log(best);
-            if (best.length > 0) { //get most damaged target
-                best.sort(function(a,b) {
-                    return a.hp - b.hp;
-                });
-                target = best[0];
-            }
         }
         
         if (target == null) {
@@ -276,12 +278,13 @@ function load_unit(self, unit) {
                     best.push({"unit":u, "distance":distance});
                 }
             });
-            if (best.length > 0) { //get closest target
-                best.sort(function(a,b) {
-                    return a.distance - b.distance;
-                });
-                target = best[0].unit;
-            }
+        }
+        
+        if (best.length > 0) { //get closest target in list
+            best.sort(function(a,b) {
+                return a.distance - b.distance;
+            });
+            target = best[0].unit;
         }
         
         return target;
