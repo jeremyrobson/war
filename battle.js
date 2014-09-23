@@ -65,6 +65,12 @@ function battle_loop(self) {
     self.disp.forEach(function(d) {
         d.update();
     });
+    
+    if (self.unit.filter(function(u) {
+        return u.side == "cpu" && u.hp > 0;
+    }).length == 0) {
+        mode = create_menu(context, party); //todo
+    }
 }
 
 function battle_mouse_move(self, x, y) {
@@ -238,10 +244,10 @@ function load_unit(self, unit) {
         if (newunit.charge >= 100 && distance <= newunit.range)
             newunit.attack();
         
-        if (newunit.target.hp <= 0)
+        if (newunit.target && newunit.target.hp <= 0)
             newunit.target = null;
             
-        if (newunit.side == newunit.target.side && newunit.target.hp >= newunit.target.maxhp / 2) //healed target to 50%
+        if (newunit.target && newunit.side == newunit.target.side && newunit.target.hp >= newunit.target.maxhp / 2) //healed target to 50%
             newunit.target = null;
     };
     
