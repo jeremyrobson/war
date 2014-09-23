@@ -12,9 +12,15 @@ function draw_rect(ctx, rect, color, border, shadow) {
 
 }
 
-function create_button(text, x, y, fn) {
+function create_grid(x, y) {
+
+}
+
+function create_button(ctx, text, x, y, fn) {
     var newbutton = {};
-    newbutton.rect = rect(x, y, 100, 32);
+    newbutton.font = "24px Arial";
+    ctx.font = newbutton.font;
+    newbutton.rect = rect(x, y, ctx.measureText(text).width, 32);
     newbutton.text = text;
     newbutton.x = x;
     newbutton.y = y;
@@ -30,25 +36,33 @@ function create_button(text, x, y, fn) {
         ctx.strokeRect(newbutton.rect.x, newbutton.rect.y, newbutton.rect.w, newbutton.rect.h);
         ctx.fillStyle = newbutton.color;
         ctx.fillRect(newbutton.rect.x, newbutton.rect.y, newbutton.rect.w, newbutton.rect.h);
-        draw_text(ctx, newbutton.text, x, y, "24px Arial", "rgb(255,255,255)");
+        draw_text(ctx, newbutton.text, x, y, newbutton.font, "rgb(255,255,255)");
     };
     
     return newbutton;
 }
 
-function create_menu(party) {
+function create_menu(ctx, party) {
     var newmenu = {};
     newmenu.selunit = 0;
     newmenu.buttons = [];
     
-    newmenu.buttons.push(create_button("Buy Unit", 200, 400, function() {
+    newmenu.buttons.push(create_button(ctx, "Buy Unit", 100, 400, function() {
         party.unit.push(create_unit(party.side));
+        return 1;
     }));
 
-    newmenu.buttons.push(create_button("To battle!", 500, 400, function() {
+    newmenu.buttons.push(create_button(ctx, "To battle!", 500, 400, function() {
         //return function(mode) {
             mode = create_battle(party, 64, 48);
         //};
+        return 1;
+    }));
+    
+    newmenu.buttons.push(create_button(ctx, "Upgrade PWR", 240, 400, function() {
+        if (newmenu.selunit)
+            newmenu.selunit.pwr += 1;
+        return 1;
     }));
     
     newmenu.loop = function() {
@@ -61,15 +75,15 @@ function create_menu(party) {
     
     newmenu.mouse_down = function(mx, my) {
         var fn;
-        newmenu.index = Math.floor((my-32) / 24);
-        newmenu.selunit = party.unit[newmenu.index];
-        
         newmenu.buttons.forEach(function(b) {
             if (b.rect.hit(mx, my))
                 fn = b.mouse_down();
         });
+        console.log(fn);
+        if (fn) return fn;
         
-        return fn;
+        newmenu.index = Math.floor((my-32) / 24);
+        newmenu.selunit = party.unit[newmenu.index];
     };
     
     newmenu.draw = function(ctx) {
@@ -111,3 +125,4 @@ function create_menu(party) {
     
     return newmenu;
 }
+
