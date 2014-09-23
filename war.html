@@ -70,12 +70,12 @@ window.onload = function() {
     };
     canvas.onmousedown = function(e) {
         var fn = mode.mouse_down(e.offsetX, e.offsetY);
-        fn(mode);
+        //fn(mode);
     };
     
     var party = create_party("user", 3);
     
-    mode = create_menu(party);
+    mode = create_menu(context, party);
     
     interval = window.setInterval(loop, 1000/60);
 };
