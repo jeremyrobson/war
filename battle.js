@@ -2,13 +2,14 @@ var colors = {
     "grass": "rgb(100,155,100)"
 };
 
-function create_battle(party, width, height) {
+function create_battle(ctx, party, width, height) {
     var newbattle = {};
     
     newbattle.party = party;
     newbattle.width = width;
     newbattle.height = height;
-
+    newbattle.status = "battle";
+    
     newbattle.tile = [];
     for (var x=0;x<width;x++) {
         newbattle.tile[x] = [];
@@ -36,6 +37,10 @@ function create_battle(party, width, height) {
     newbattle.mouse_move = function(mx, my) {
         battle_mouse_move(newbattle, mx, my);
     };
+    newbattle.mouse_down = function(mx, my) {
+        if (newbattle.status == "won")
+            return function(game) { game.mode = create_menu(ctx, party); };
+    };
     newbattle.draw = function(ctx) {
         battle_draw(newbattle, ctx);
     };
@@ -44,9 +49,7 @@ function create_battle(party, width, height) {
 }
 
 function battle_loop(self) {
-    self.unit.filter(function(u) {
-        return u.hp > 0;
-    }).forEach(function(u) {
+    self.unit.forEach(function(u) {
         u.update();
     });
     
@@ -66,10 +69,8 @@ function battle_loop(self) {
         d.update();
     });
     
-    if (self.unit.filter(function(u) {
-        return u.side == "cpu" && u.hp > 0;
-    }).length == 0) {
-        mode = create_menu(context, party); //todo
+    if (self.unit.filter(function(u) { return u.side == "cpu" && u.hp > 0; }).length == 0) {
+        self.status = "won";
     }
 }
 
@@ -102,9 +103,7 @@ function battle_draw(self, ctx) {
         ctx.fillText(d.text, d.x, d.y);
     });
     
-    ctx.font = "32px Arial";
-    ctx.fillStyle = "rgb(255,255,255)";
-    ctx.fillText("Funds: $" + self.party.funds, 32, 32);
+    draw_text(ctx, "Funds: $" + self.party.funds, 32, 32, "32px Arial", "rgb(255,255,255)");
 }
 
 function dist(a, b) {
@@ -198,6 +197,8 @@ function load_unit(self, unit) {
     
     newunit.update = function() {
         newunit.color = newunit.colors[Math.floor((newunit.colors.length-1) * newunit.hp/newunit.maxhp)];
+        if (newunit.hp <= 0)
+            return;
         
         if (newunit.hp < newunit.maxhp*2/3) {
             //newunit.ai = "run";
@@ -244,11 +245,18 @@ function load_unit(self, unit) {
         if (newunit.charge >= 100 && distance <= newunit.range)
             newunit.attack();
         
-        if (newunit.target && newunit.target.hp <= 0)
+        if (newunit.target && newunit.target.hp <= 0) {
             newunit.target = null;
-            
-        if (newunit.target && newunit.side == newunit.target.side && newunit.target.hp >= newunit.target.maxhp / 2) //healed target to 50%
+            newunit.vx = 0;
+            newunit.vy = 0;
+        }
+        
+        //healed target to 50%
+        if (newunit.target && newunit.side == newunit.target.side && newunit.target.hp >= newunit.target.maxhp / 2) {
             newunit.target = null;
+            newunit.vx = 0;
+            newunit.vy = 0;
+        }
     };
     
     newunit.attack = function() {
