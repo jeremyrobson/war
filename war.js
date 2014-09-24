@@ -1,5 +1,4 @@
-var canvas, context, interval;
-var mode;
+var game;
 
 function clone(obj) {
     var newobj;
@@ -19,15 +18,6 @@ function clone(obj) {
     throw new Error("cloning error.");
 }
 
-function loop() {
-    mode.loop();
-    draw();
-}
-
-function draw() {
-    mode.draw(context);
-}
-
 function create_unit(side) {
     var newunit = {};
     newunit.id = Math.floor(Math.random() * 100000);
@@ -35,7 +25,7 @@ function create_unit(side) {
     newunit.side = side;
     newunit.range = Math.floor(Math.random() * 50) + 5;
     newunit.charge = Math.floor(Math.random() * 100);
-    newunit.maxhp = 100;
+    newunit.maxhp = Math.floor(Math.random() * 30) + 70;
     newunit.hp = newunit.maxhp;
     newunit.pwr = Math.floor(Math.random()*5) + 1;
     newunit.def = Math.floor(Math.random()*3) + 1;
@@ -45,13 +35,49 @@ function create_unit(side) {
 
 function create_party(side, count) {
     var newparty = {};
-    newparty.funds = 0;
+    newparty.funds = 50;
     newparty.side = side;
     newparty.unit = [];
     for (var i=0;i<count;i++) {
         newparty.unit[i] = create_unit(side);
     }
+    
+    newparty.get_average = function(stat) {
+        var sum=0;
+        newparty.unit.forEach(function(u) {
+            sum+=u[stat];
+        });
+        return Math.floor(sum / newparty.unit.length) + 1;
+    };
+    
     return newparty;
+}
+
+function create_game(canvas, context) {
+    var newgame = {};
+    newgame.party = create_party("user", 3);
+    newgame.mode = create_menu(context, newgame.party);
+    
+    canvas.onmousemove = function(e) {
+        newgame.mode.mouse_move(e.offsetX, e.offsetY);
+    };
+    canvas.onmousedown = function(e) {
+        var result = newgame.mode.mouse_down(e.offsetX, e.offsetY);
+        if (typeof result == "function")
+            result(newgame);
+    };    
+    
+    newgame.loop = function() {
+        game.mode.loop();
+        newgame.draw();
+    };
+
+    newgame.draw = function() {
+        game.mode.draw(context);
+    };
+    
+    newgame.interval = window.setInterval(newgame.loop, 1000/60);
+    return newgame;
 }
 
 window.onload = function() {
@@ -59,17 +85,8 @@ window.onload = function() {
     context = canvas.getContext("2d");
     context.textBaseline = "top";
     
-    canvas.onmousemove = function(e) {
-        mode.mouse_move(e.offsetX, e.offsetY);
-    };
-    canvas.onmousedown = function(e) {
-        var fn = mode.mouse_down(e.offsetX, e.offsetY);
-        //fn(mode);
-    };
+    game = create_game(canvas, context);
     
-    var party = create_party("user", 3);
-    
-    mode = create_menu(context, party);
-    
-    interval = window.setInterval(loop, 1000/60);
+    game.party = create_party("user", 3);
+    game.mode = create_menu(context, game.party);
 };
