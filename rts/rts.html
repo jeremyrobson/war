@@ -20,7 +20,7 @@ var randint = function(min, max) { return Math.floor(Math.random() * (max - min)
 Array.prototype.pop_random = function() { return this.splice(randint(0, this.length), 1)[0]; }
 
 var canvas, context, minimapcanvas, minimapcontext, interval, lasttick=0, frames=0, fps=0;
-var screenx, screeny, screenw, screenh;
+var displaywidth = 640, displayheight = 480;
 var mx, my, pressed;
 var game;
 
@@ -36,9 +36,18 @@ Surface.prototype.render = function() {
     this.target.drawImage(this.buffercanvas, 0, 0);
 };
 
+function draw_text(ctx, text, x, y, font, color) {
+    ctx.font = font;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgb(0,0,0)";
+    ctx.strokeText(text, x, y);
+}
+
 function loop() {
 
-    game.loop();
+    game.loop(mx, my);
 
     draw();
     if (Date.now() >= lasttick + 1000) {
@@ -80,10 +89,7 @@ function draw() {
     game.draw(context);
 
     //fps
-    context.fillStyle = "rgb(255, 255, 55)";
-    context.font = "32px Serif";
-    context.textBaseline = "top";
-    context.fillText("FPS: " + fps, 20, 20);
+    draw_text(context, "FPS: " + fps, 20, 20, "32px Verdana", "rgb(255, 255, 55)");
     
     frames++;
 }
@@ -97,6 +103,7 @@ window.onload = function() {
     canvas.onmousemove = mouse_move;
     canvas.oncontextmenu = function (e) { e.preventDefault(); };
     context = canvas.getContext("2d");
+    context.textBaseline = "top";
     minimapcanvas = document.getElementById("minimap");
     minimapcontext = minimapcanvas.getContext("2d");
     start();
