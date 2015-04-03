@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+<style>
+* {
+    float: left;
+    margin: 0;
+    padding: 0;
+}
+
+#minimap {
+    float: left;
+}
+</style>
+<script src="unit.js"></script>
+<script src="map.js"></script>
+<script src="game.js"></script>
+<script>
+var randint = function(min, max) { return Math.floor(Math.random() * (max - min)) + min; };
+Array.prototype.pop_random = function() { return this.splice(randint(0, this.length), 1)[0]; }
+
+var canvas, context, minimapcanvas, minimapcontext, interval, lasttick=0, frames=0, fps=0;
+var screenx, screeny, screenw, screenh;
+var mx, my, pressed;
+var game;
+
+var Surface = function(target, width, height) {
+    this.target = target;
+    this.buffercanvas = document.createElement("canvas");
+    this.buffercanvas.width = width;
+    this.buffercanvas.height = height;
+    this.buffercontext = this.buffercanvas.getContext("2d");
+};
+
+Surface.prototype.render = function() {
+    this.target.drawImage(this.buffercanvas, 0, 0);
+};
+
+function loop() {
+
+    game.loop();
+
+    draw();
+    if (Date.now() >= lasttick + 1000) {
+        fps = frames;
+        frames = 0;
+        lasttick = Date.now();
+    }
+}
+
+function start() {
+    screenx = 0;
+    screeny = 0;
+    game = new Game(minimapcontext);
+    interval = window.setInterval(loop, 1000/60);
+}
+
+function mouse_down(e) {
+    pressed = e.which == 1;
+    mouse_move(e);
+    game.mouse_down(mx, my, e.which); //1-left, 3-right
+}
+
+function mouse_up(e) {
+    pressed = false;
+    mouse_move(e);
+    game.mouse_up(mx, my, e.which); //1-left, 3-right
+}
+
+function mouse_move(e) {
+    mx = e.offsetX;
+    my = e.offsetY;
+    game.mouse_move(mx, my, pressed);
+}
+
+function draw() {
+    context.fillStyle = "rgb(200,200,200)";
+    context.fillRect(0, 0, 640, 480);
+    
+    game.draw(context);
+
+    //fps
+    context.fillStyle = "rgb(255, 255, 55)";
+    context.font = "32px Serif";
+    context.textBaseline = "top";
+    context.fillText("FPS: " + fps, 20, 20);
+    
+    frames++;
+}
+
+window.onload = function() {
+    canvas = document.getElementById("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+    canvas.onmousedown = mouse_down;
+    canvas.onmouseup = mouse_up;
+    canvas.onmousemove = mouse_move;
+    canvas.oncontextmenu = function (e) { e.preventDefault(); };
+    context = canvas.getContext("2d");
+    minimapcanvas = document.getElementById("minimap");
+    minimapcontext = minimapcanvas.getContext("2d");
+    start();
+};
+</script>
+</head>
+<body>
+<canvas id="canvas" width="640" height="480"></canvas>
+<canvas id="minimap" width="128" height="128"></canvas>
+</body>
+</html>
