@@ -3,8 +3,8 @@ var Game = function(minimapcontext) {
     this.minimap = new MiniMap(this.map, minimapcontext);
 };
 
-Game.prototype.loop = function() {
-    this.map.loop();
+Game.prototype.loop = function(mx, my) {
+    this.map.loop(mx, my);
 };
 
 Game.prototype.mouse_down = function(mx, my, button) {
