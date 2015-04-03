@@ -1,9 +1,21 @@
 var tiletypes = {
+    "water": {
+        "color": "steelblue"
+    },
+    "sand": {
+        "color": "khaki"
+    },
+    "mud": {
+        "color": "darkgoldenrod"
+    },
     "lightgrass": {
-        "color": "rgb(25,155,55)"
+        "color": "yellowgreen"
+    },
+    "mediumgrass": {
+        "color": "forestgreen"
     },
     "darkgrass": {
-        "color": "rgb(25,105,55)"
+        "color": "darkgreen"
     }
 };
 
@@ -12,6 +24,7 @@ var Tile = function(type, x, y) {
     this.color = tiletypes[type].color;
     this.x = x;
     this.y = y;
+    this.occupied = null;
 };
 
 Tile.prototype.draw = function(ctx, x, y, w, h) {
@@ -24,9 +37,18 @@ function create_formation(units, tx, ty) {
     if (units.length == 1) { radius = 0; }
     else if (units.length < 10) { radius = 1; }
     else { radius = 2; }
+    
+    //watch out for out of bounds
+    var x1 = -radius; 
+    if (x1 + tx < 0) x1 = 0;
+    var x2 = x1 + radius * 2;
+    var y1 = -radius;
+    if (y1 + ty < 0) y1 = 0;
+    var y2 = y1 + radius * 2;
+    
     var flist = [];
-    for (var x=-radius; x<=radius; x++) {
-        for (var y=-radius; y<=radius; y++)
+    for (var x=x1; x<=x2; x++) {
+        for (var y=y1; y<=y2; y++)
             flist.push({ "x": tx + x, "y": ty + y });
     }
     var formation = [];
@@ -38,12 +60,14 @@ function create_formation(units, tx, ty) {
 var Map = function(width, height) {
     this.width = width;
     this.height = height;
+    this.screenx = 0;
+    this.screeny = 0;
     
     this.tile = [];
     for (var x=0; x<width; x++) {
         this.tile[x] = [];
         for (var y=0; y<height; y++) {
-            this.tile[x][y] = new Tile(["lightgrass", "darkgrass"][randint(0,2)], x, y);
+            this.tile[x][y] = new Tile(["water", "sand", "mud", "lightgrass", "mediumgrass", "darkgrass", "lightgrass", "mediumgrass", "darkgrass"][randint(0,9)], x, y);
         }
     }
     
@@ -73,15 +97,23 @@ Map.prototype.move_units = function(tx, ty) {
     }, this);
 };
 
-Map.prototype.loop = function() {
+Map.prototype.loop = function(mx, my) {
+    var tx = Math.floor(mx/16);
+    var ty = Math.floor(my/16);
+    
+    if (tx < 2 && this.screenx > 0) this.screenx--;
+    if (tx >= 38 && this.screenx < this.width - 40) this.screenx++;
+    if (ty < 2 && this.screeny > 0) this.screeny--;
+    if (ty >= 28 && this.screeny < this.height - 30) this.screeny++;
+    
     this.selunits.forEach(function(u) {
         u.move();
     });
 };
 
 Map.prototype.mouse_down = function(mx, my, button) {
-    var tx = Math.floor(mx/16);
-    var ty = Math.floor(my/16);
+    var tx = Math.floor(mx/16) + this.screenx;
+    var ty = Math.floor(my/16) + this.screeny;
     
     if (button == 1) {
         this.x1 = mx;
@@ -111,24 +143,31 @@ Map.prototype.mouse_move = function(mx, my, pressed) {
     }
 };
 
-Map.prototype.draw = function(ctx, screenx, screeny) {
+Map.prototype.draw = function(ctx) {
   
-    for (var x=0; x<this.width; x++) {
-        for (var y=0; y<this.height; y++) {
-            this.tile[x][y].draw(ctx, x, y, 16, 16);
+    for (var x=0; x<40; x++) {
+        for (var y=0; y<30; y++) {
+            var tx = this.screenx + x;
+            var ty = this.screeny + y;
+            this.tile[tx][ty].draw(ctx, x, y, 16, 16);
         }
     }
   
     this.formation.forEach(function(f) {
+        var dx = (f.x - this.screenx) * 16;
+        var dy = (f.y - this.screeny) * 16;
         ctx.fillStyle = "rgb(200, 50, 150)";
-        ctx.fillRect(f.x * 16, f.y * 16, 16, 16);
-    });
+        ctx.fillRect(dx, dy, 16, 16);
+    }, this);
   
     this.selunits.forEach(function(u) {
+        var dx = (u.x - this.screenx) * 16;
+        var dy = (u.y - this.screeny) * 16;
         ctx.strokeStyle = "rgb(0,255,0)";
         ctx.lineWidth = 2;
-        ctx.strokeRect(u.x*16,u.y*16,16,16);
-    });
+        ctx.strokeRect(dx, dy, 16, 16);
+        u.draw_heath(ctx, this.screenx, this.screeny);
+    }, this);
   
     //draw selector
     if (this.x1 != this.x2) {
@@ -138,8 +177,8 @@ Map.prototype.draw = function(ctx, screenx, screeny) {
     }
   
     this.units.forEach(function(u) {
-        u.draw(ctx);
-    });
+        u.draw(ctx, this.screenx, this.screeny);
+    }, this);
 };
 
 var MiniMap = function(map, target) {
