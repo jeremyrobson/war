@@ -1,3 +1,5 @@
+var healthcolors = ["rgb(255,0,0)", "rgb(255,255,0)", "rgb(0,255,0)"];
+
 var Unit = function(team, x, y) {
     this.team = team;
     this.color = (team == "player") ? "rgb(0,255,255)" : "rgb(255,0,100)";
@@ -10,6 +12,7 @@ var Unit = function(team, x, y) {
     this.vx = 0;
     this.vy = 0;
     this.vel = Math.random() + 0.1;
+    this.hp = randint(0, 100);
 };
 
 Unit.prototype.move = function() {
@@ -43,8 +46,19 @@ Unit.prototype.mouse_down = function(tx, ty) {
         return this;
 };
 
-Unit.prototype.draw = function(ctx) {
-    ctx.fillStyle = this.color;
-    ctx.font = "16px fixed bold";
-    ctx.fillText(this.sprite, this.x*16, this.y*16);
+Unit.prototype.draw = function(ctx, screenx, screeny) {
+    var dx = (this.x - screenx) * 16;
+    var dy = (this.y - screeny) * 16 - 8;
+    draw_text(ctx, this.sprite, dx, dy, "bold 20px verdana", this.color);
+};
+
+Unit.prototype.draw_heath = function(ctx, screenx, screeny) {
+    var dx = (this.x - screenx) * 16;
+    var dy = (this.y - screeny) * 16;
+    var ratio = this.hp / 100;
+    var c = Math.floor(healthcolors.length * ratio);
+    ctx.fillStyle = "rgb(0,0,0)";
+    ctx.fillRect(dx-8, dy-8, 32, 6);
+    ctx.fillStyle = healthcolors[c];
+    ctx.fillRect(dx-8, dy-8, 32 * ratio, 6);
 };
