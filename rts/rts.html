@@ -3,15 +3,28 @@
 <head>
 <style>
 * {
-    float: left;
     margin: 0;
     padding: 0;
 }
 
-#minimap {
+#canvasdiv {
     float: left;
 }
+
+#minimapdiv {
+    background-color: #dcdcdc;
+    float: left;
+}
+
+#buildingdiv {
+    background-color: #cbcbcb;
+    visibility: hidden;
+    float: left;
+    width: 50%;
+}
 </style>
+<script src="jquery-2.1.3.min.js"></script>
+<script src="building.js"></script>
 <script src="unit.js"></script>
 <script src="map.js"></script>
 <script src="game.js"></script>
@@ -47,7 +60,7 @@ function draw_text(ctx, text, x, y, font, color) {
 
 function loop() {
 
-    game.loop(mx, my);
+    game.loop(mx, my, pressed);
 
     draw();
     if (Date.now() >= lasttick + 1000) {
@@ -86,7 +99,7 @@ function draw() {
     context.fillStyle = "rgb(200,200,200)";
     context.fillRect(0, 0, 640, 480);
     
-    game.draw(context);
+    game.draw(context, mx, my);
 
     //fps
     draw_text(context, "FPS: " + fps, 20, 20, "32px Verdana", "rgb(255, 255, 55)");
@@ -106,12 +119,27 @@ window.onload = function() {
     context.textBaseline = "top";
     minimapcanvas = document.getElementById("minimap");
     minimapcontext = minimapcanvas.getContext("2d");
+    
+    $("#building li").click(function(e) {
+        var type = $(this).attr("value");
+        game.menu_click(function(map) {
+            map.selconstruct = new Building("player", 0, 0, type);
+        });
+
+    });
+    
     start();
 };
 </script>
 </head>
 <body>
-<canvas id="canvas" width="640" height="480"></canvas>
-<canvas id="minimap" width="128" height="128"></canvas>
+<div id="canvasdiv"><canvas id="canvas" width="640" height="480"></canvas></div>
+<div id="minimapdiv"><canvas id="minimap" width="128" height="128"></canvas></div>
+<div id="buildingdiv">
+<ul id="building">
+    <li value="townhall">Town Hall</li>
+    <li value="wall">Wall</li>
+</ul>
+</div>
 </body>
 </html>
