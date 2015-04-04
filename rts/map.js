@@ -67,18 +67,38 @@ var Map = function(width, height) {
     for (var x=0; x<width; x++) {
         this.tile[x] = [];
         for (var y=0; y<height; y++) {
-            this.tile[x][y] = new Tile(["water", "sand", "mud", "lightgrass", "mediumgrass", "darkgrass", "lightgrass", "mediumgrass", "darkgrass"][randint(0,9)], x, y);
+            this.tile[x][y] = new Tile(["mediumgrass", "darkgrass"][randint(0,2)], x, y);
         }
     }
     
+    this.buildings = [];
+    this.add_building(new Building("player", 5, 5, "townhall"));
+    this.selbuilding = null;
+    this.selconstruct = null;
+    
+    //todo: units can't start on buildings, pathfinding
     this.units = [];
     for (var i=0;i<16;i++) {
         this.units.push(new Unit(["player", "cpu"][randint(0,2)]));
     }
-    
     this.selunits = [];
-    
     this.formation = [];
+};
+
+Map.prototype.add_building = function(building) {
+    this.buildings.push(building);
+    building.blocks.forEach(function(b) {
+        var tx = b.x;
+        var ty = b.y;
+        this.tile[tx][ty].occupied = building;
+    }, this);
+    return true; //todo: return false if cannot add building
+};
+
+Map.prototype.select_building = function(x1, y1, x2, y2) {
+    this.selbuilding = this.buildings.filter(function(b) {
+        return b.in_range(x1, y1, x2, y2);
+    })[0];
 };
 
 Map.prototype.select_units = function(x1, y1, x2, y2) {
@@ -86,6 +106,10 @@ Map.prototype.select_units = function(x1, y1, x2, y2) {
     this.selunits = this.units.filter(function(u) {
         return u.in_range(x1, y1, x2, y2);
     });
+    if (this.selunits.length > 0)
+        $("#buildingdiv").css("visibility","visible");
+    else
+        $("#buildingdiv").css("visibility","hidden");
 };
 
 Map.prototype.move_units = function(tx, ty) {
@@ -97,14 +121,20 @@ Map.prototype.move_units = function(tx, ty) {
     }, this);
 };
 
-Map.prototype.loop = function(mx, my) {
+Map.prototype.loop = function(mx, my, pressed) {
+    //scrolling
     var tx = Math.floor(mx/16);
     var ty = Math.floor(my/16);
-    
     if (tx < 2 && this.screenx > 0) this.screenx--;
     if (tx >= 38 && this.screenx < this.width - 40) this.screenx++;
     if (ty < 2 && this.screeny > 0) this.screeny--;
     if (ty >= 28 && this.screeny < this.height - 30) this.screeny++;
+    
+    //selector
+    if (pressed) {
+        this.x2 = mx + this.screenx * 16;
+        this.y2 = my + this.screeny * 16;
+    }
     
     this.selunits.forEach(function(u) {
         u.move();
@@ -116,11 +146,13 @@ Map.prototype.mouse_down = function(mx, my, button) {
     var ty = Math.floor(my/16) + this.screeny;
     
     if (button == 1) {
-        this.x1 = mx;
-        this.y1 = my;
+        this.x1 = mx + this.screenx * 16;
+        this.y1 = my + this.screeny * 16;
     }
     if (button == 3)
         this.move_units(tx, ty);
+    
+    
 };
 
 Map.prototype.mouse_up = function(mx, my, button) {
@@ -132,18 +164,16 @@ Map.prototype.mouse_up = function(mx, my, button) {
         if (x1 > x2) { var temp = x2; x2 = x1; x1 = temp; }
         if (y1 > y2) { var temp = y2; y2 = y1; y1 = temp; }
         this.select_units(x1, y1, x2, y2);
+        if (this.selunits.length==0) this.select_building(x1, y1, x2, y2); else this.selbuilding = null;
     }
     this.x1 = 0; this.y1 = 0; this.x2 = 0; this.y2 = 0;
 };
 
 Map.prototype.mouse_move = function(mx, my, pressed) {
-    if (pressed) {
-        this.x2 = mx;
-        this.y2 = my;
-    }
+
 };
 
-Map.prototype.draw = function(ctx) {
+Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
   
     for (var x=0; x<40; x++) {
         for (var y=0; y<30; y++) {
@@ -153,6 +183,21 @@ Map.prototype.draw = function(ctx) {
         }
     }
   
+    this.buildings.forEach(function(b) {
+        b.draw(ctx, this.screenx, this.screeny);
+    }, this);
+  
+    //draw building selection
+    if (this.selbuilding) {
+        var dx = (this.selbuilding.x - this.screenx) * 16;
+        var dy = (this.selbuilding.y - this.screeny) * 16;
+        ctx.strokeStyle = "rgb(0,255,0)";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(dx, dy, this.selbuilding.width * 16, this.selbuilding.height * 16);
+        this.selbuilding.draw_health(ctx, this.screenx, this.screeny);
+    }
+    
+    //draw formation
     this.formation.forEach(function(f) {
         var dx = (f.x - this.screenx) * 16;
         var dy = (f.y - this.screeny) * 16;
@@ -160,20 +205,31 @@ Map.prototype.draw = function(ctx) {
         ctx.fillRect(dx, dy, 16, 16);
     }, this);
   
+    //draw unit selection
     this.selunits.forEach(function(u) {
         var dx = (u.x - this.screenx) * 16;
         var dy = (u.y - this.screeny) * 16;
         ctx.strokeStyle = "rgb(0,255,0)";
         ctx.lineWidth = 2;
         ctx.strokeRect(dx, dy, 16, 16);
-        u.draw_heath(ctx, this.screenx, this.screeny);
+        u.draw_health(ctx, this.screenx, this.screeny);
     }, this);
   
     //draw selector
     if (this.x1 != this.x2) {
+        var x1 = this.x1 - this.screenx * 16;
+        var y1 = this.y1 - this.screeny * 16;
+        var x2 = this.x2 - this.x1;
+        var y2 = this.y2 - this.y1;
         ctx.strokeStyle = "rgb(0,255,0)";
         ctx.lineWidth = 1;
-        ctx.strokeRect(this.x1,this.y1,this.x2-this.x1,this.y2-this.y1);
+        ctx.strokeRect(x1, y1, x2, y2);
+    }
+  
+    if (this.selconstruct) {
+        var dx = Math.floor(mx / 16);
+        var dy = Math.floor(my / 16);
+        this.selconstruct.draw_ghost(ctx, dx, dy, this.tile);
     }
   
     this.units.forEach(function(u) {
@@ -200,4 +256,12 @@ MiniMap.prototype.redraw = function() {
 
 MiniMap.prototype.render = function() {
     this.surface.render();
+    this.map.buildings.forEach(function(b) {
+        this.surface.buffercontext.fillStyle = b.color;
+        this.surface.buffercontext.fillRect(b.x*2,b.y*2,b.width*2,b.height*2);
+    }, this);
+    this.map.units.forEach(function(u) {
+        this.surface.buffercontext.fillStyle = u.color;
+        this.surface.buffercontext.fillRect(u.x*2,u.y*2,2,2);
+    }, this);
 };
