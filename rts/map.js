@@ -1,24 +1,3 @@
-var tiletypes = {
-    "water": {
-        "color": "steelblue"
-    },
-    "sand": {
-        "color": "khaki"
-    },
-    "mud": {
-        "color": "darkgoldenrod"
-    },
-    "lightgrass": {
-        "color": "yellowgreen"
-    },
-    "mediumgrass": {
-        "color": "forestgreen"
-    },
-    "darkgrass": {
-        "color": "darkgreen"
-    }
-};
-
 var Tile = function(type, x, y) {
     this.type = type;
     this.color = tiletypes[type].color;
@@ -28,7 +7,7 @@ var Tile = function(type, x, y) {
 };
 
 Tile.prototype.draw = function(ctx, x, y, w, h) {
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.color.toString();
     ctx.fillRect(x*w, y*h, w, h);
 };
 
@@ -62,6 +41,7 @@ var Map = function(width, height) {
     this.height = height;
     this.screenx = 0;
     this.screeny = 0;
+    this.floattexts = [];
     
     this.tile = [];
     for (var x=0; x<width; x++) {
@@ -72,7 +52,6 @@ var Map = function(width, height) {
     }
     
     this.buildings = [];
-    this.add_building(new Building("player", 5, 5, "townhall"));
     this.selbuilding = null;
     this.selconstruct = null;
     
@@ -85,6 +64,10 @@ var Map = function(width, height) {
     this.formation = [];
 };
 
+Map.prototype.add_floattext = function(text, x, y) {
+    this.floattexts.push(new FloatText(text, x, y));
+};
+
 Map.prototype.add_building = function(building) {
     this.buildings.push(building);
     building.blocks.forEach(function(b) {
@@ -92,6 +75,8 @@ Map.prototype.add_building = function(building) {
         var ty = b.y;
         this.tile[tx][ty].occupied = building;
     }, this);
+    if (this.selunits.length > 0) this.move_units(building.x, building.y);
+    this.add_floattext("$1000", building.x, building.y);
     return true; //todo: return false if cannot add building
 };
 
@@ -131,13 +116,18 @@ Map.prototype.loop = function(mx, my, pressed) {
     if (ty >= 28 && this.screeny < this.height - 30) this.screeny++;
     
     //selector
-    if (pressed) {
+    if (pressed && !this.selconstruct) {
         this.x2 = mx + this.screenx * 16;
         this.y2 = my + this.screeny * 16;
     }
     
-    this.selunits.forEach(function(u) {
+    this.units.forEach(function(u) {
         u.move();
+    });
+    
+    this.floattexts = this.floattexts.filter(function(ft) {
+        ft.move();
+        return ft.life > 0;
     });
 };
 
@@ -145,18 +135,25 @@ Map.prototype.mouse_down = function(mx, my, button) {
     var tx = Math.floor(mx/16) + this.screenx;
     var ty = Math.floor(my/16) + this.screeny;
     
-    if (button == 1) {
-        this.x1 = mx + this.screenx * 16;
-        this.y1 = my + this.screeny * 16;
+    if (this.selconstruct) {
+        var building = new Building(this.selconstruct.team, tx, ty, this.selconstruct.type);
+        this.add_building(building);
     }
-    if (button == 3)
-        this.move_units(tx, ty);
+    else {
+        if (button == 1) {
+            this.x1 = mx + this.screenx * 16;
+            this.y1 = my + this.screeny * 16;
+        }
+        if (button == 3)
+            this.move_units(tx, ty);
+    }
     
+    console.log(this.x2, this.y2);
     
 };
 
 Map.prototype.mouse_up = function(mx, my, button) {
-    if (button == 1) {
+    if (button == 1 && !this.selconstruct) {
         var x1 = Math.floor(this.x1 / 16);
         var y1 = Math.floor(this.y1 / 16);
         var x2 = Math.floor(this.x2 / 16);
@@ -167,6 +164,7 @@ Map.prototype.mouse_up = function(mx, my, button) {
         if (this.selunits.length==0) this.select_building(x1, y1, x2, y2); else this.selbuilding = null;
     }
     this.x1 = 0; this.y1 = 0; this.x2 = 0; this.y2 = 0;
+    this.selconstruct = null;
 };
 
 Map.prototype.mouse_move = function(mx, my, pressed) {
@@ -174,7 +172,6 @@ Map.prototype.mouse_move = function(mx, my, pressed) {
 };
 
 Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
-  
     for (var x=0; x<40; x++) {
         for (var y=0; y<30; y++) {
             var tx = this.screenx + x;
@@ -235,33 +232,10 @@ Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
     this.units.forEach(function(u) {
         u.draw(ctx, this.screenx, this.screeny);
     }, this);
-};
-
-var MiniMap = function(map, target) {
-    this.map = map;
-    this.surface = new Surface(target, map.width*2, map.height*2);
     
-    this.redraw();
-};
-
-MiniMap.prototype.redraw = function() {
-    this.surface.buffercontext.fillStyle = "rgb(100,100,100)";
-    this.surface.buffercontext.fillRect(0,0,this.surface.width,this.surface.height);
-    for (var x=0; x<this.map.width; x++) {
-        for (var y=0; y<this.map.height; y++) {
-            this.map.tile[x][y].draw(this.surface.buffercontext, x, y, 2, 2);
-        }
-    }
-};
-
-MiniMap.prototype.render = function() {
-    this.surface.render();
-    this.map.buildings.forEach(function(b) {
-        this.surface.buffercontext.fillStyle = b.color;
-        this.surface.buffercontext.fillRect(b.x*2,b.y*2,b.width*2,b.height*2);
-    }, this);
-    this.map.units.forEach(function(u) {
-        this.surface.buffercontext.fillStyle = u.color;
-        this.surface.buffercontext.fillRect(u.x*2,u.y*2,2,2);
+    this.floattexts.forEach(function(ft) {
+        var dx = (ft.x - this.screenx) * 16;
+        var dy = (ft.y - this.screeny) * 16;
+        draw_text(ctx, ft.text, dx, dy, ft.font, ft.color);
     }, this);
 };
