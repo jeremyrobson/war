@@ -24,6 +24,7 @@
 }
 </style>
 <script src="jquery-2.1.3.min.js"></script>
+<script src="templates.js"></script>
 <script src="building.js"></script>
 <script src="unit.js"></script>
 <script src="map.js"></script>
@@ -47,6 +48,19 @@ var Surface = function(target, width, height) {
 
 Surface.prototype.render = function() {
     this.target.drawImage(this.buffercanvas, 0, 0);
+};
+
+var Color = function(r, g, b, a) {
+    this.r = r; this.g = g; this.b = b; this.a = a;
+};
+
+Color.prototype.edit = function(key, value) {
+    this[key] = value;
+    return this;
+};
+
+Color.prototype.toString = function() {
+    return "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
 };
 
 function draw_text(ctx, text, x, y, font, color) {
