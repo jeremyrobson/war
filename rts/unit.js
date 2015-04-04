@@ -37,7 +37,6 @@ Unit.prototype.set_dest = function(tx, ty) {
 };
 
 Unit.prototype.in_range = function(x1, y1, x2, y2) {
-    console.log(x1, y1, x2, y2);
     return this.x >= x1 && this.y >= y1 && this.x <= x2 && this.y <= y2;
 };
 
@@ -52,7 +51,7 @@ Unit.prototype.draw = function(ctx, screenx, screeny) {
     draw_text(ctx, this.sprite, dx, dy, "bold 20px verdana", this.color);
 };
 
-Unit.prototype.draw_heath = function(ctx, screenx, screeny) {
+Unit.prototype.draw_health = function(ctx, screenx, screeny) {
     var dx = (this.x - screenx) * 16;
     var dy = (this.y - screeny) * 16;
     var ratio = this.hp / 100;
@@ -62,3 +61,11 @@ Unit.prototype.draw_heath = function(ctx, screenx, screeny) {
     ctx.fillStyle = healthcolors[c];
     ctx.fillRect(dx-8, dy-8, 32 * ratio, 6);
 };
+
+/*
+-all units start off as base class
+-they level up their abilities based on tasks they complete
+-building units must gain experience building to become faster builders
+-fighting units must gain experience fighting to become better fighters
+-etc.
+*/
