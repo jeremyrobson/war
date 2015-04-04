@@ -1,27 +1,3 @@
-var healthcolors = ["rgb(255,0,0)", "rgb(255,255,0)", "rgb(0,255,0)"];
-var buildingtypes = {
-    "townhall": {
-        "width": 4,
-        "height": 4
-    },
-    "wall": {
-        "width": 1,
-        "height": 1
-    },
-    "mine": {
-        "width": 2,
-        "height": 2,
-    },
-    "farm": {
-        "width": 2,
-        "height": 3
-    },
-    "barracks": {
-        "width": 3,
-        "height": 3
-    }
-};
-
 var Building = function(team, x, y, type) {
     this.team = team;
     this.color = (team == "player") ? "rgba(0,255,255,1.0)" : "rgba(255,0,100,1.0)";
@@ -71,7 +47,6 @@ Building.prototype.draw_health = function(ctx, screenx, screeny) {
 };
 
 Building.prototype.draw_ghost = function(ctx, mx, my, tile) {
-    
     this.blocks.forEach(function(b) {
         var tx = (b.x + mx);
         var ty = (b.y + my);
