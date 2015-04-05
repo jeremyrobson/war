@@ -62,6 +62,8 @@ var Map = function(width, height) {
     }
     this.selunits = [];
     this.formation = [];
+    
+    this.bullets = [];
 };
 
 Map.prototype.add_floattext = function(text, x, y) {
@@ -100,9 +102,7 @@ Map.prototype.select_units = function(x1, y1, x2, y2) {
 Map.prototype.move_units = function(tx, ty) {
     this.formation = create_formation(this.selunits, tx, ty);
     this.selunits.forEach(function(u, i) {
-        var dest = this.formation[i];
-        u.set_dest(dest.x, dest.y);
-        u.moving = true;
+        u.set_task("move", this.formation[i]);
     }, this);
 };
 
@@ -122,8 +122,8 @@ Map.prototype.loop = function(mx, my, pressed) {
     }
     
     this.units.forEach(function(u) {
-        u.move();
-    });
+        u.loop(this);
+    }, this);
     
     this.floattexts = this.floattexts.filter(function(ft) {
         ft.move();
@@ -147,9 +147,6 @@ Map.prototype.mouse_down = function(mx, my, button) {
         if (button == 3)
             this.move_units(tx, ty);
     }
-    
-    console.log(this.x2, this.y2);
-    
 };
 
 Map.prototype.mouse_up = function(mx, my, button) {
