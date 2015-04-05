@@ -14,7 +14,7 @@ var Building = function(team, x, y, type) {
         }
     }
     //this.sprite = ["a", "b", "c"][randint(0,3)];
-    this.hp = randint(0, 100);
+    this.hp = 0;
 };
 
 Building.prototype.in_range = function(x1, y1, x2, y2) {
