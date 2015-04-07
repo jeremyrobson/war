@@ -57,9 +57,8 @@ var Map = function(width, height) {
     
     //todo: units can't start on buildings, pathfinding
     this.units = [];
-    for (var i=0;i<16;i++) {
+    for (var i=0;i<10;i++)
         this.units.push(new Unit(["player", "cpu"][randint(0,2)]));
-    }
     this.selunits = [];
     this.formation = [];
     
@@ -68,6 +67,10 @@ var Map = function(width, height) {
 
 Map.prototype.add_floattext = function(text, x, y) {
     this.floattexts.push(new FloatText(text, x, y));
+};
+
+Map.prototype.add_bullet = function(shooter, target, type) {
+    this.bullets.push(new Bullet(shooter, target, bullettypes[type]));
 };
 
 Map.prototype.add_building = function(building) {
@@ -125,9 +128,12 @@ Map.prototype.loop = function(mx, my, pressed) {
         u.loop(this);
     }, this);
     
+    this.bullets = this.bullets.filter(function(b) {
+        return b.move();
+    });
+    
     this.floattexts = this.floattexts.filter(function(ft) {
-        ft.move();
-        return ft.life > 0;
+        return ft.move();
     });
 };
 
@@ -228,6 +234,10 @@ Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
   
     this.units.forEach(function(u) {
         u.draw(ctx, this.screenx, this.screeny);
+    }, this);
+    
+    this.bullets.forEach(function(b) {
+        b.draw(ctx, this.screenx, this.screeny);
     }, this);
     
     this.floattexts.forEach(function(ft) {

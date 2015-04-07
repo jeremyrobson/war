@@ -1,18 +1,44 @@
-var Bullet = function(shooter, target, x, y, type) {
+var Bullet = function(shooter, target, type) {
+    this.color = shooter.color;
     this.shooter = shooter;
     this.target = target;
-    this.x = x;
-    this.y = y;
     this.type = type;
     this.visible = true; //bullets hide when they hit and are garbage collected on an interval
+    this.life = 100;
+    this.destx = target.x;
+    this.desty = target.y;
+    this.x = shooter.x;
+    this.y = shooter.y;
+    this.vel = 0.5;
+    var angle = Math.atan2(this.y - target.y, this.x - target.x);
+    this.vx = -Math.cos(angle);
+    this.vy = -Math.sin(angle);
+};
+
+Bullet.prototype.hit = function(target) {
+    var dx = this.target.x - this.x;
+    var dy = this.target.y - this.y;
+    var delta = Math.sqrt(dx*dx+dy*dy);
+    if (delta < 0.3) {
+        //this.target.hit(this);
+        return false;
+    }
+    if (this.life <= 0) return false;
+    return true;
 };
 
 Bullet.prototype.move = function() {
-    var angle = Math.atan2(this.y - this.desty, this.x - this.destx);
-    this.vx = -Math.cos(angle);
-    this.vy = -Math.sin(angle);
     this.x += this.vx * this.vel;
     this.y += this.vy * this.vel;
+    this.life--;
+    return this.hit(this.target);
+};
+
+Bullet.prototype.draw = function(ctx, screenx, screeny) {
+    var dx = (this.x - screenx) * 16;
+    var dy = (this.y - screeny) * 16 - 8;
+    ctx.fillStyle = this.color;
+    ctx.fillRect(dx, dy, 8, 8);
 };
 
 var Unit = function(team, x, y) {
@@ -25,13 +51,15 @@ var Unit = function(team, x, y) {
     this.task = 0;
     this.destx = 0;
     this.desty = 0;
-    this.vx = 0;
-    this.vy = 0;
     this.vel = Math.random() * 0.5 + 0.1;
     this.target = null;
     this.hp = randint(0, 100);
     this.range = 5;
     this.proximity = 0.5;
+};
+
+Unit.prototype.act = function(map) {
+    if (this.task == "attack" && this.target) map.add_bullet(this, this.target, "power");
 };
 
 Unit.prototype.set_task = function(task, target) {
@@ -43,29 +71,28 @@ Unit.prototype.set_task = function(task, target) {
     }
 };
 
-//unoptimized method for finding closest target
 Unit.prototype.find_target = function(map) {
-    this.target = map.units.filter(function(u) {
+    var targetlist = map.units.filter(function(u) {
         return u.id != this.id && u.team != this.team;
-    }, this).sort(function(a, b) {
-        var dx = a.x - this.destx;
-        var dy = a.y - this.desty;
-        var deltaA = Math.sqrt(dx*dx+dy*dy);
-        dx = b.x - this.destx;
-        dy = b.y - this.desty;
-        var deltaB = Math.sqrt(dx*dx+dy*dy);
-        return deltaA - deltaB;
-    }, this)[0];
+    }, this);
+    
+    if (targetlist.length > 0)
+        this.target = targetlist.max(function(a) {
+            var dx = a.x - this.x;
+            var dy = a.y - this.y;
+            var delta = Math.sqrt(dx*dx+dy*dy);
+            return delta;
+        }, this);
     if (this.target) //todo: is this needed?
         this.set_task("attack", this.target);
 };
 
 Unit.prototype.loop = function(map) {
-    this.move();
+    this.move(map);
     if (!this.task && !this.target) this.find_target(map);
 };
 
-Unit.prototype.move = function() {
+Unit.prototype.move = function(map) {
     if (this.task == "move")
         this.proximity = 0.5;
     else if (this.task == "attack")
@@ -78,22 +105,22 @@ Unit.prototype.move = function() {
     }
     
     if (this.task) {
-        var angle = Math.atan2(this.y - this.desty, this.x - this.destx);
-        this.vx = -Math.cos(angle);
-        this.vy = -Math.sin(angle);
-        this.x += this.vx * this.vel;
-        this.y += this.vy * this.vel;
-        
         var dx = this.x - this.destx;
         var dy = this.y - this.desty;
         var delta = Math.sqrt(dx*dx + dy*dy); //pythagorean distance
         
-        if (delta < this.proximity) {
-            if (randint(0,10) == 0)
+        if (delta < this.proximity) { //if unit reached destination
+            this.act(map);
+            if (this.team == "player")
                 this.set_task("move", {"x": randint(0,64), "y": randint(0,64)});
             else
                 this.set_task(0);
             this.target = null;
+        }
+        else {
+            var angle = Math.atan2(this.y - this.desty, this.x - this.destx);
+            this.x += -Math.cos(angle) * this.vel;
+            this.y += -Math.sin(angle) * this.vel;
         }
     }
 };
@@ -115,6 +142,8 @@ Unit.prototype.mouse_down = function(tx, ty) {
 Unit.prototype.draw = function(ctx, screenx, screeny) {
     var dx = (this.x - screenx) * 16;
     var dy = (this.y - screeny) * 16 - 8;
+    //ctx.fillStyle = "rgba(0,0,0,0.25)";
+    //ctx.fillRect(dx, dy+18, 13, 4); //draw shadow
     draw_text(ctx, this.sprite, dx, dy, "bold 20px verdana", this.color);
 };
 

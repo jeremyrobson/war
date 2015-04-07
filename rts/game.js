@@ -12,6 +12,7 @@ FloatText.prototype.move = function() {
     this.y -= 0.05;
     var alpha = this.life / 100;
     this.color = this.color.edit("a", alpha);
+    return this.life > 0;
 };
 
 var Game = function(minimapcontext) {

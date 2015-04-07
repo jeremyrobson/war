@@ -23,6 +23,15 @@ var buildingtypes = {
     }
 };
 
+var bullettypes = {
+    "damage": {
+        "power": -1
+    },
+    "heal": {
+        "power": 1
+    }
+};
+
 var tiletypes = {
     "water": {
         "color": "steelblue"

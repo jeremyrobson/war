@@ -32,10 +32,25 @@
 <script>
 var randint = function(min, max) { return Math.floor(Math.random() * (max - min)) + min; };
 Array.prototype.pop_random = function() { return this.splice(randint(0, this.length), 1)[0]; }
+Array.prototype.max = function(callback, thisArg) {
+    var T;
+    if (arguments.length > 1) T = thisArg;
+    var maxelement = this[0];
+    var maxvalue = callback.call(T, maxelement, 0);
+    for (var i=1; i<this.length; i++) {
+        var newelement = this[i];
+        var newvalue = callback.call(T, newelement, i);
+        if (newvalue > maxvalue) {
+            maxelement = newelement;
+            maxvalue = newvalue;
+        }
+    }
+    return maxelement;
+};
 
 var canvas, context, minimapcanvas, minimapcontext, interval, lasttick=0, frames=0, fps=0;
 var displaywidth = 640, displayheight = 480;
-var mx, my, pressed;
+var mx=0, my=0, pressed;
 var game;
 
 var Surface = function(target, width, height) {
@@ -155,5 +170,6 @@ window.onload = function() {
     <li value="wall">Wall</li>
 </ul>
 </div>
+<div id="log">0</div>
 </body>
 </html>
