@@ -240,9 +240,10 @@ Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
         b.draw(ctx, this.screenx, this.screeny);
     }, this);
     
+    //draw foat texts
     this.floattexts.forEach(function(ft) {
         var dx = (ft.x - this.screenx) * 16;
         var dy = (ft.y - this.screeny) * 16;
-        draw_text(ctx, ft.text, dx, dy, ft.font, ft.color);
+        draw_text(ctx, ft.text, dx, dy, ft.font, ft.color, ft.bordercolor);
     }, this);
 };

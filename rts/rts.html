@@ -78,12 +78,12 @@ Color.prototype.toString = function() {
     return "rgba(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
 };
 
-function draw_text(ctx, text, x, y, font, color) {
+function draw_text(ctx, text, x, y, font, color, bordercolor) {
     ctx.font = font;
     ctx.fillStyle = color;
     ctx.fillText(text, x, y);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgb(0,0,0)";
+    ctx.strokeStyle = bordercolor || "rgba(0,0,0,1.0)";
     ctx.strokeText(text, x, y);
 }
 

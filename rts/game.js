@@ -4,6 +4,7 @@ var FloatText = function(text, x, y, color) {
     this.y = y;
     this.font = "bold 20px Arial";
     this.color = color || new Color(0, 255, 0, 1.0);
+    this.bordercolor = new Color(0, 0, 0, 1.0);
     this.life = 100;
 };
 
@@ -11,7 +12,8 @@ FloatText.prototype.move = function() {
     this.life--;
     this.y -= 0.05;
     var alpha = this.life / 100;
-    this.color = this.color.edit("a", alpha);
+    this.color.edit("a", alpha);
+    this.bordercolor.edit("a", alpha);
     return this.life > 0;
 };
 

@@ -28,10 +28,13 @@ Building.prototype.mouse_down = function(tx, ty) {
 
 Building.prototype.draw = function(ctx, screenx, screeny) {
     ctx.fillStyle = this.color;
+    ctx.strokeStyle = "rgba(0,0,0,1.0)";
+    ctx.strokeWidth = 2;
     this.blocks.forEach(function(b) {
         var dx = (b.x - screenx) * 16;
         var dy = (b.y - screeny) * 16;
         ctx.fillRect(dx, dy, 16, 16);
+        ctx.strokeRect(dx, dy, 16, 16);
     }, this);
 };
 
@@ -50,9 +53,12 @@ Building.prototype.draw_ghost = function(ctx, mx, my, tile) {
     this.blocks.forEach(function(b) {
         var tx = (b.x + mx);
         var ty = (b.y + my);
-        ctx.fillStyle = (!tile[tx][ty].occupied) ? this.ghostcolor : "rgba(255,0,0,0.75)";   
         var dx = tx * 16;
         var dy = ty * 16;
+        ctx.fillStyle = (!tile[tx][ty].occupied) ? this.ghostcolor : "rgba(255,0,0,0.75)";   
         ctx.fillRect(dx, dy, 16, 16);
+        ctx.strokeStyle = "rgba(0,0,0,0.5)";
+        ctx.strokeWidth = 2;
+        ctx.strokeRect(dx, dy, 16, 16);
     }, this);
 };
