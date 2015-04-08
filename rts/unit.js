@@ -3,6 +3,7 @@ var Bullet = function(shooter, target, type) {
     this.shooter = shooter;
     this.target = target;
     this.type = type;
+    this.power = 5;
     this.visible = true; //bullets hide when they hit and are garbage collected on an interval
     this.life = 100;
     this.destx = target.x;
@@ -15,23 +16,23 @@ var Bullet = function(shooter, target, type) {
     this.vy = -Math.sin(angle);
 };
 
-Bullet.prototype.hit = function(target) {
+Bullet.prototype.hit = function(map) {
     var dx = this.target.x - this.x;
     var dy = this.target.y - this.y;
     var delta = Math.sqrt(dx*dx+dy*dy);
     if (delta < 0.3) {
-        //this.target.hit(this);
+        this.target.hit(this, map);
         return false;
     }
     if (this.life <= 0) return false;
     return true;
 };
 
-Bullet.prototype.move = function() {
+Bullet.prototype.move = function(map) {
     this.x += this.vx * this.vel;
     this.y += this.vy * this.vel;
     this.life--;
-    return this.hit(this.target);
+    return this.hit(map);
 };
 
 Bullet.prototype.draw = function(ctx, screenx, screeny) {
@@ -51,11 +52,15 @@ var Unit = function(team, x, y) {
     this.task = 0;
     this.destx = 0;
     this.desty = 0;
-    this.vel = Math.random() * 0.5 + 0.1;
+    this.vel = Math.random() * 0.1 + 0.1;
     this.target = null;
     this.hp = randint(0, 100);
     this.range = 5;
     this.proximity = 0.5;
+};
+
+Unit.prototype.hit = function(bullet, map) {
+    map.add_floattext(bullet.power, this.x, this.y);
 };
 
 Unit.prototype.act = function(map) {
@@ -81,7 +86,7 @@ Unit.prototype.find_target = function(map) {
             var dx = a.x - this.x;
             var dy = a.y - this.y;
             var delta = Math.sqrt(dx*dx+dy*dy);
-            return delta;
+            return -delta; //negative returns min instead of max
         }, this);
     if (this.target) //todo: is this needed?
         this.set_task("attack", this.target);

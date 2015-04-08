@@ -52,3 +52,26 @@ var tiletypes = {
         "color": "darkgreen"
     }
 };
+
+var bullettypes = {
+    "attack": {
+        "mult": -1,
+        "color": "rgb(255,0,0)"
+    },
+    "heal": {
+        "mult": 1,
+        "color": "rgb(0,255,0)"
+    },
+    "build": {
+        "mult": 1,
+        "color": "rgb(0,0,255)"
+    },
+    "mine": {
+        "mult": -1,
+        "color": "rgb(255,0,255)"
+    },
+    "carve": {
+        "mult": -1,
+        "color": "rgb(0,255,255)"
+    }
+};

@@ -48,7 +48,7 @@ Array.prototype.max = function(callback, thisArg) {
     return maxelement;
 };
 
-var canvas, context, minimapcanvas, minimapcontext, interval, lasttick=0, frames=0, fps=0;
+var canvas, context, minimapcanvas, minimapcontext, lasttick=0, frames=0, fps=0;
 var displaywidth = 640, displayheight = 480;
 var mx=0, my=0, pressed;
 var game;
@@ -88,10 +88,11 @@ function draw_text(ctx, text, x, y, font, color) {
 }
 
 function loop() {
-
+    window.requestAnimationFrame(loop);
     game.loop(mx, my, pressed);
 
     draw();
+    
     if (Date.now() >= lasttick + 1000) {
         fps = frames;
         frames = 0;
@@ -100,10 +101,8 @@ function loop() {
 }
 
 function start() {
-    screenx = 0;
-    screeny = 0;
     game = new Game(minimapcontext);
-    interval = window.setInterval(loop, 1000/60);
+    window.requestAnimationFrame(loop);
 }
 
 function mouse_down(e) {
@@ -143,6 +142,7 @@ window.onload = function() {
     canvas.onmousedown = mouse_down;
     canvas.onmouseup = mouse_up;
     canvas.onmousemove = mouse_move;
+    canvas.onmouseout = mouse_up; //quick fix
     canvas.oncontextmenu = function (e) { e.preventDefault(); };
     context = canvas.getContext("2d");
     context.textBaseline = "top";

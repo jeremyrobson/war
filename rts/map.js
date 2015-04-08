@@ -129,8 +129,8 @@ Map.prototype.loop = function(mx, my, pressed) {
     }, this);
     
     this.bullets = this.bullets.filter(function(b) {
-        return b.move();
-    });
+        return b.move(this);
+    }, this);
     
     this.floattexts = this.floattexts.filter(function(ft) {
         return ft.move();
@@ -201,7 +201,7 @@ Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
     this.formation.forEach(function(f) {
         var dx = (f.x - this.screenx) * 16;
         var dy = (f.y - this.screeny) * 16;
-        ctx.fillStyle = "rgb(200, 50, 150)";
+        ctx.fillStyle = "rgba(255, 255, 0, 0.75)";
         ctx.fillRect(dx, dy, 16, 16);
     }, this);
   
