@@ -1,7 +1,7 @@
 var Building = function(team, x, y, type) {
     this.team = team;
-    this.color = (team == "player") ? "rgba(0,255,255,1.0)" : "rgba(255,0,100,1.0)";
-    this.ghostcolor = this.color.slice(0, this.color.length-4) + "0.5)";
+    this.color = (team == "player") ? new Color(0,255,255,1.0) : new Color(255,0,100,1.0);
+    this.ghostcolor = this.color.edit("alpha", "0.5");
     this.x = x || randint(0,64);
     this.y = y || randint(0,64);
     this.type = type;
@@ -49,16 +49,19 @@ Building.prototype.draw_health = function(ctx, screenx, screeny) {
     ctx.fillRect(dx-8, dy-8, 32 * ratio, 6);
 };
 
-Building.prototype.draw_ghost = function(ctx, mx, my, tile) {
+Building.prototype.draw_ghost = function(ctx, mx, my, screenx, screeny, tile) {
+    ctx.strokeStyle = "rgba(0,0,0,0.5)";
+    ctx.strokeWidth = 2;
+    console.log(screenx, screeny);
     this.blocks.forEach(function(b) {
-        var tx = (b.x + mx);
-        var ty = (b.y + my);
-        var dx = tx * 16;
-        var dy = ty * 16;
-        ctx.fillStyle = (!tile[tx][ty].occupied) ? this.ghostcolor : "rgba(255,0,0,0.75)";   
-        ctx.fillRect(dx, dy, 16, 16);
-        ctx.strokeStyle = "rgba(0,0,0,0.5)";
-        ctx.strokeWidth = 2;
-        ctx.strokeRect(dx, dy, 16, 16);
+        var tx = b.x + mx + screenx;
+        var ty = b.y + my + screeny;
+        if (tile[tx] && tile[tx][ty]) {
+            var dx = (b.x + mx) * 16;
+            var dy = (b.y + my) * 16;
+            ctx.fillStyle = (!tile[tx][ty].occupied) ? this.ghostcolor.toString() : "rgba(255,0,0,0.75)";   
+            ctx.fillRect(dx, dy, 16, 16);
+            ctx.strokeRect(dx, dy, 16, 16);
+        }
     }, this);
 };

@@ -146,11 +146,12 @@ Map.prototype.mouse_down = function(mx, my, button) {
         this.add_building(building);
     }
     else {
-        if (button == 1) {
+        if (button == 1) { //left click
             this.x1 = mx + this.screenx * 16;
             this.y1 = my + this.screeny * 16;
+            this.formation = [];
         }
-        if (button == 3)
+        if (button == 3) //right click
             this.move_units(tx, ty);
     }
 };
@@ -229,7 +230,7 @@ Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
     if (this.selconstruct) {
         var dx = Math.floor(mx / 16);
         var dy = Math.floor(my / 16);
-        this.selconstruct.draw_ghost(ctx, dx, dy, this.tile);
+        this.selconstruct.draw_ghost(ctx, dx, dy, this.screenx, this.screeny, this.tile);
     }
   
     this.units.forEach(function(u) {

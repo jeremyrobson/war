@@ -21,7 +21,7 @@ var Game = function(minimapcontext) {
     this.map = new Map(64, 64);
     this.minimap = new MiniMap(this.map, minimapcontext);
     
-    this.map.add_building(new Building("player", 5, 5, "townhall"));
+    this.map.add_building(new Building("player", 5, 5, "base"));
 };
 
 Game.prototype.loop = function(mx, my, pressed) {
