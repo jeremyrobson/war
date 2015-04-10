@@ -118,8 +118,8 @@ function mouse_up(e) {
 }
 
 function mouse_move(e) {
-    mx = e.offsetX;
-    my = e.offsetY;
+    mx = e.offsetX==undefined?e.layerX:e.offsetX;
+    my = e.offsetY==undefined?e.layerY:e.offsetY;
     game.mouse_move(mx, my, pressed);
 }
 
@@ -142,7 +142,7 @@ window.onload = function() {
     canvas.onmousedown = mouse_down;
     canvas.onmouseup = mouse_up;
     canvas.onmousemove = mouse_move;
-    canvas.onmouseout = mouse_up; //quick fix
+    //canvas.onmouseout = mouse_up; //quick fix
     canvas.oncontextmenu = function (e) { e.preventDefault(); };
     context = canvas.getContext("2d");
     context.textBaseline = "top";
