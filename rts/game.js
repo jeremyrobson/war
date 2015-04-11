@@ -17,43 +17,60 @@ FloatText.prototype.move = function() {
     return this.life > 0;
 };
 
-var Game = function(minimapcontext) {
+var Game = function() {
+    this.pressed = false;
     this.map = new Map(64, 64);
-    this.minimap = new MiniMap(this.map, minimapcontext);
+    this.minimap = new MiniMap(this.map);
     
     this.map.add_building(new Building("player", 5, 5, "base"));
+    this.map.add_building(new Building("cpu", 45, 45, "base"));
 };
 
-Game.prototype.loop = function(mx, my, pressed) {
-    this.map.loop(mx, my, pressed);
+Game.prototype.loop = function(mx, my) {
+    this.map.loop(mx, my, this.pressed);
 };
 
 Game.prototype.menu_click = function(callback) {
     callback(this.map);
 };
 
-Game.prototype.mouse_down = function(mx, my, button) {
-    this.map.mouse_down(mx, my, button);
+Game.prototype.mouse_down = function(canvas, mx, my, button) {
+    if (canvas.id == "canvas")
+        this.map.mouse_down(mx, my, button);
+    else if (canvas.id == "minimap")
+        this.minimap.mouse_down(mx, my, button, this.map);
 };
 
-Game.prototype.mouse_up = function(mx, my, button) {
-    this.map.mouse_up(mx, my, button);
+Game.prototype.mouse_up = function(canvas, mx, my, button) {
+    if (canvas.id == "canvas")
+        this.map.mouse_up(mx, my, button);
 };
 
-Game.prototype.mouse_move = function(mx, my, pressed) {
-    this.map.mouse_move(mx, my, pressed);
+Game.prototype.mouse_move = function(canvas, mx, my, which) {
+    this.pressed = which == 1;
+    //if (canvas.id == "canvas")
+        //this.map.mouse_move(mx, my, this.pressed);
 };
 
-Game.prototype.draw = function(ctx, mx, my) {
+Game.prototype.draw = function(ctx, mmctx, mx, my) {
     this.map.draw(ctx, mx, my);
-    this.minimap.render();
+    this.minimap.render(mmctx);
 };
 
-var MiniMap = function(map, target) {
+var MiniMap = function(map) {
     this.map = map;
-    this.surface = new Surface(target, map.width*2, map.height*2);
+    this.surface = new Surface(map.width*2, map.height*2);
     
     this.redraw();
+};
+
+MiniMap.prototype.mouse_down = function(mx, my, button, map) {
+    map.screenx = mx - Math.floor(map.width / 2);
+    map.screeny = my - Math.floor(map.height / 2);
+    if (map.screenx < 0) map.screenx = 0;
+    if (map.screeny < 0) map.screeny = 0;
+    if (map.screenx + 40 > map.width) map.screenx = map.width - 40;
+    if (map.screeny + 30 > map.height) map.screeny = map.height - 30;
 };
 
 MiniMap.prototype.redraw = function() {
@@ -66,14 +83,14 @@ MiniMap.prototype.redraw = function() {
     }
 };
 
-MiniMap.prototype.render = function() {
-    this.surface.render();
+MiniMap.prototype.render = function(mmctx) {
+    mmctx.drawImage(this.surface.buffercanvas, 0, 0);
     this.map.buildings.forEach(function(b) {
-        this.surface.buffercontext.fillStyle = b.color;
-        this.surface.buffercontext.fillRect(b.x*2,b.y*2,b.width*2,b.height*2);
+        mmctx.fillStyle = b.color;
+        mmctx.fillRect(b.x*2,b.y*2,b.width*2,b.height*2);
     }, this);
     this.map.units.forEach(function(u) {
-        this.surface.buffercontext.fillStyle = u.color;
-        this.surface.buffercontext.fillRect(u.x*2,u.y*2,2,2);
+        mmctx.fillStyle = u.color;
+        mmctx.fillRect(u.x*2,u.y*2,2,2);
     }, this);
 };

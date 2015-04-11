@@ -7,6 +7,7 @@ var Building = function(team, x, y, type) {
     this.type = type;
     this.width = buildingtypes[type].width;
     this.height = buildingtypes[type].height;
+    this.units = buildingtypes[type].units || [];
     this.blocks = [];
     for (var bx=0;bx<this.width;bx++) {
         for (var by=0;by<this.height;by++) {
@@ -14,7 +15,41 @@ var Building = function(team, x, y, type) {
         }
     }
     //this.sprite = ["a", "b", "c"][randint(0,3)];
+    this.queue = [];
+    this.progress = 0;
     this.hp = 0;
+};
+
+Building.prototype.loop = function(map) {
+    if (this.queue.length > 0) {
+        if (this.progress == 100) {
+            this.queue.shift().fn.call(this, map);
+            this.progress = 0;
+        }
+        else if (this.progress < 100)
+            this.progress++;
+        console.log(this.progress);
+    }
+};
+
+Building.prototype.push_unit = function(type) {
+    this.queue.push({
+        "type": type,
+        "fn": function(map) {
+            map.add_unit(new Unit(this.team, this.x, this.y));
+        }
+    });
+};
+
+Building.prototype.on_select = function() {
+    $("#menudiv").empty();
+    this.units.forEach(function(type) {
+        var button = document.createElement("button");
+        $(button).html(type).click(this, function(self) {
+            self.data.push_unit(type);
+        }).appendTo("#menudiv");
+    }, this);
+    $("#menudiv").css("visibility","visible");
 };
 
 Building.prototype.in_range = function(x1, y1, x2, y2) {

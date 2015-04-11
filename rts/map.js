@@ -55,10 +55,8 @@ var Map = function(width, height) {
     this.selbuilding = null;
     this.selconstruct = null;
     
-    //todo: units can't start on buildings, pathfinding
+    //todo: units can't start on buildings, pathfinding, etc.
     this.units = [];
-    for (var i=0;i<10;i++)
-        this.units.push(new Unit(["player", "cpu"][randint(0,2)]));
     this.selunits = [];
     this.formation = [];
     
@@ -71,6 +69,10 @@ Map.prototype.add_floattext = function(text, x, y) {
 
 Map.prototype.add_bullet = function(shooter, target, type) {
     this.bullets.push(new Bullet(shooter, target, bullettypes[type]));
+};
+
+Map.prototype.add_unit = function(unit) {
+    this.units.push(unit);
 };
 
 Map.prototype.add_building = function(building) {
@@ -89,17 +91,18 @@ Map.prototype.select_building = function(x1, y1, x2, y2) {
     this.selbuilding = this.buildings.filter(function(b) {
         return b.in_range(x1, y1, x2, y2);
     })[0];
+    if (this.selbuilding) this.selbuilding.on_select();
 };
 
 Map.prototype.select_units = function(x1, y1, x2, y2) {
+    $("#menudiv").css("visibility","hidden");
     //todo: only select own units
     this.selunits = this.units.filter(function(u) {
         return u.in_range(x1, y1, x2, y2);
     });
-    if (this.selunits.length > 0)
-        $("#buildingdiv").css("visibility","visible");
-    else
-        $("#buildingdiv").css("visibility","hidden");
+    this.selunits.forEach(function(u) {
+        u.on_select(this);
+    }, this);
 };
 
 Map.prototype.move_units = function(tx, ty) {
@@ -123,6 +126,10 @@ Map.prototype.loop = function(mx, my, pressed) {
         this.x2 = mx + this.screenx * 16;
         this.y2 = my + this.screeny * 16;
     }
+    
+    this.buildings.forEach(function(b) {
+        b.loop(this);
+    }, this);
     
     this.units.forEach(function(u) {
         u.loop(this);
@@ -171,9 +178,11 @@ Map.prototype.mouse_up = function(mx, my, button) {
     this.selconstruct = null;
 };
 
+/*
 Map.prototype.mouse_move = function(mx, my, pressed) {
 
 };
+*/
 
 Map.prototype.draw = function(ctx, mx, my) { //todo: move mx, my to loop(mx, my)
     for (var x=0; x<40; x++) {

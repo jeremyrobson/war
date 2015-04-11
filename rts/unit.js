@@ -4,7 +4,7 @@ var Bullet = function(shooter, target, type) {
     this.target = target;
     this.type = type;
     this.power = 5;
-    this.visible = true; //bullets hide when they hit and are garbage collected on an interval
+    //this.visible = true; //bullets hide when they hit and are garbage collected on an interval
     this.life = 100;
     this.destx = target.x;
     this.desty = target.y;
@@ -49,6 +49,7 @@ var Unit = function(team, x, y) {
     this.x = x || randint(0,64);
     this.y = y || randint(0,64);
     this.sprite = ["a", "b", "c"][randint(0,3)];
+    this.buildings = ["base", "wall"];
     this.task = 0;
     this.destx = 0;
     this.desty = 0;
@@ -57,6 +58,17 @@ var Unit = function(team, x, y) {
     this.hp = randint(0, 100);
     this.range = 5;
     this.proximity = 0.5;
+};
+
+Unit.prototype.on_select = function(map) {
+    $("#menudiv").empty();
+    this.buildings.forEach(function(type) {
+        var button = document.createElement("button");
+        $(button).html(type).click(this, function(self) {
+            map.selconstruct = new Building(self.team, 0, 0, type);
+        }).appendTo("#menudiv");
+    }, this);
+    $("#menudiv").css("visibility","visible");
 };
 
 Unit.prototype.hit = function(bullet, map) {
