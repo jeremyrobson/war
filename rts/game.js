@@ -17,13 +17,31 @@ FloatText.prototype.move = function() {
     return this.life > 0;
 };
 
+var Team = function(name, color) {
+    this.name = name;
+    this.color = color;
+    this.gold = 1000;
+    this.food = 10;
+    this.buildings = [];
+    this.units = [];
+};
+
+Team.prototype.display_stats = function() {
+    var s = "<table>";
+    s += "<tr><th>Gold</th><td>" + this.gold + "</td></tr>";
+    s += "<tr><th>Units</th><td>" + this.units.length + "</td></tr>";
+    s += "<tr><th>Food</th><td>" + this.food + "</td></tr>";
+    s += "</table>";
+    $("#stats").html(s);
+};
+
 var Game = function() {
     this.pressed = false;
     this.map = new Map(64, 64);
     this.minimap = new MiniMap(this.map);
     
-    this.map.add_building(new Building("player", 5, 5, "base"));
-    this.map.add_building(new Building("cpu", 45, 45, "base"));
+    this.map.add_building(this.map.teams[0], 5, 5, "base");
+    this.map.add_building(this.map.teams[1], 45, 45, "base");
 };
 
 Game.prototype.loop = function(mx, my) {

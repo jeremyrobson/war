@@ -1,6 +1,6 @@
 var Building = function(team, x, y, type) {
     this.team = team;
-    this.color = (team == "player") ? new Color(0,255,255,1.0) : new Color(255,0,100,1.0);
+    this.color = team.color;
     this.ghostcolor = this.color.edit("alpha", "0.5");
     this.x = x || randint(0,64);
     this.y = y || randint(0,64);
@@ -35,7 +35,7 @@ Building.prototype.push_unit = function(type) {
     this.queue.push({
         "type": type,
         "fn": function(map) {
-            map.add_unit(new Unit(this.team, this.x, this.y));
+            map.add_unit(this.team, this.x, this.y);
         }
     });
 };

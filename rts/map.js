@@ -51,6 +51,8 @@ var Map = function(width, height) {
         }
     }
     
+    this.teams = [new Team("player", new Color(0,255,255,1.0)), new Team("cpu", new Color(255,0,0,1.0))];
+    
     this.buildings = [];
     this.selbuilding = null;
     this.selconstruct = null;
@@ -71,12 +73,16 @@ Map.prototype.add_bullet = function(shooter, target, type) {
     this.bullets.push(new Bullet(shooter, target, bullettypes[type]));
 };
 
-Map.prototype.add_unit = function(unit) {
+Map.prototype.add_unit = function(team, x, y) {
+    var unit = new Unit(team, x, y);
+    team.units.push(unit);
     this.units.push(unit);
 };
 
-Map.prototype.add_building = function(building) {
+Map.prototype.add_building = function(team, x, y, buildingtype) {
+    var building = new Building(team, x, y, buildingtype);
     this.buildings.push(building);
+    team.buildings.push(building);
     building.blocks.forEach(function(b) {
         var tx = b.x;
         var ty = b.y;
@@ -148,6 +154,8 @@ Map.prototype.loop = function(mx, my, pressed) {
     this.floattexts = this.floattexts.filter(function(ft) {
         return ft.move();
     });
+    
+    this.teams[0].display_stats();
 };
 
 Map.prototype.mouse_down = function(mx, my, button) {
@@ -158,8 +166,7 @@ Map.prototype.mouse_down = function(mx, my, button) {
     if (this.selconstruct) {
         var buildingtype = this.selconstruct.type; //capture value before nullified
         this.assign_task("build", target, function(unit, map) {
-            var building = new Building(unit.team, tx, ty, buildingtype);
-            if (map.add_building(building))
+            if (map.add_building(unit.team, tx, ty, buildingtype))
                 console.log("success");
             else
                 console.log("fail");

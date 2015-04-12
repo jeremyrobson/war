@@ -52,14 +52,12 @@ var Task = function(type, target, fn) {
 var Unit = function(team, x, y) {
     this.id = randint(10000, 1000000);
     this.team = team;
-    this.color = (team == "player") ? "rgb(0,255,255)" : "rgb(255,0,100)";
+    this.color = team.color;
     this.x = x || randint(0,64);
     this.y = y || randint(0,64);
     this.sprite = ["a", "b", "c"][randint(0,3)];
     this.buildings = ["base", "wall"];
-    this.task = 0;
-    this.destx = 0;
-    this.desty = 0;
+    this.tasks = [];
     this.vel = Math.random() * 0.1 + 0.1;
     this.target = null;
     this.hp = randint(0, 100);
@@ -83,18 +81,13 @@ Unit.prototype.hit = function(bullet, map) {
 };
 
 Unit.prototype.assign_task = function(type, target, fn) {
-    this.task = new Task(type, target, fn);
-    //this.target = target;
-    if (target) {
-        this.destx = target.x;
-        this.desty = target.y;
-    }
+    this.tasks.push(new Task(type, target, fn));
 };
 
 Unit.prototype.find_target = function(map) {
     var target;
     var targetlist = map.units.filter(function(u) {
-        return u.id != this.id && u.team != this.team;
+        return u.id != this.id && u.team.name != this.team.name;
     }, this);
     if (targetlist.length > 0)
         target = targetlist.max(function(a) {
@@ -107,28 +100,26 @@ Unit.prototype.find_target = function(map) {
 };
 
 Unit.prototype.loop = function(map) {
-    this.move(map);
-};
-
-Unit.prototype.move = function(map) {
-    if (this.task) {
-        var destx = this.task.target.x;
-        var desty = this.task.target.y;
+    if (this.tasks.length > 0) {
+        var task = this.tasks[0];
+        var destx = task.target.x;
+        var desty = task.target.y;
         
         var dx = this.x - destx;
         var dy = this.y - desty;
         var delta = Math.sqrt(dx*dx + dy*dy); //pythagorean distance
         
-        if (delta < this.task.proximity) { //if unit reached destination
-            if (this.task.fn) this.task.fn(this, map);
-            if (this.team == "player")
-                this.assign_task("move", {"x": randint(0,64), "y": randint(0,64)}, function(unit, map) { console.log("heya"); });
+        if (delta < task.proximity) { //if unit reached destination
+            if (task.fn) task.fn(this, map);
+            if (this.team.name == "player")
+                this.assign_task("move", {"x": randint(0,64), "y": randint(0,64)}, function(unit, map) {});
             else {
                 var target = this.find_target(map);
-                this.assign_task("attack", target, function(unit, map) {
+                if (target) this.assign_task("attack", target, function(unit, map) {
                     map.add_bullet(unit, target, "power");
                 });
             }
+            this.tasks.shift();
         }
         else {
             var angle = Math.atan2(this.y - desty, this.x - destx);
@@ -136,6 +127,10 @@ Unit.prototype.move = function(map) {
             this.y += -Math.sin(angle) * this.vel;
         }
     }
+};
+
+Unit.prototype.move = function(map) {
+
 };
 
 Unit.prototype.in_range = function(x1, y1, x2, y2) {
