@@ -28,7 +28,6 @@ Building.prototype.loop = function(map) {
         }
         else if (this.progress < 100)
             this.progress++;
-        console.log(this.progress);
     }
 };
 
@@ -71,6 +70,15 @@ Building.prototype.draw = function(ctx, screenx, screeny) {
         ctx.fillRect(dx, dy, 16, 16);
         ctx.strokeRect(dx, dy, 16, 16);
     }, this);
+    
+    if (this.progress > 0) {
+        var dx = (this.x - screenx) * 16;
+        var dy = (this.y + this.height - screeny) * 16;
+        ctx.fillStyle = "rgba(0,0,0,0.75)";
+        ctx.fillRect(dx, dy, 100, 8);
+        ctx.fillStyle = "rgba(0,255,0,0.75)";
+        ctx.fillRect(dx, dy, this.progress, 8);
+    }
 };
 
 Building.prototype.draw_health = function(ctx, screenx, screeny) {
@@ -87,7 +95,6 @@ Building.prototype.draw_health = function(ctx, screenx, screeny) {
 Building.prototype.draw_ghost = function(ctx, mx, my, screenx, screeny, tile) {
     ctx.strokeStyle = "rgba(0,0,0,0.5)";
     ctx.strokeWidth = 2;
-    console.log(screenx, screeny);
     this.blocks.forEach(function(b) {
         var tx = b.x + mx + screenx;
         var ty = b.y + my + screeny;

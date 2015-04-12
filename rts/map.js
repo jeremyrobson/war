@@ -108,7 +108,13 @@ Map.prototype.select_units = function(x1, y1, x2, y2) {
 Map.prototype.move_units = function(tx, ty) {
     this.formation = create_formation(this.selunits, tx, ty);
     this.selunits.forEach(function(u, i) {
-        u.set_task("move", this.formation[i]);
+        u.assign_task("move", this.formation[i], function() { console.log("reached destination"); });
+    }, this);
+};
+
+Map.prototype.assign_task = function(task, target, fn) {
+    this.selunits.forEach(function(u) {
+        u.assign_task("build", target, fn);
     }, this);
 };
 
@@ -147,10 +153,17 @@ Map.prototype.loop = function(mx, my, pressed) {
 Map.prototype.mouse_down = function(mx, my, button) {
     var tx = Math.floor(mx/16) + this.screenx;
     var ty = Math.floor(my/16) + this.screeny;
+    var target = {"x":tx, "y":ty};
     
     if (this.selconstruct) {
-        var building = new Building(this.selconstruct.team, tx, ty, this.selconstruct.type);
-        this.add_building(building);
+        var buildingtype = this.selconstruct.type; //capture value before nullified
+        this.assign_task("build", target, function(unit, map) {
+            var building = new Building(unit.team, tx, ty, buildingtype);
+            if (map.add_building(building))
+                console.log("success");
+            else
+                console.log("fail");
+        });
     }
     else {
         if (button == 1) { //left click

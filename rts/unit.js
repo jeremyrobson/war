@@ -42,6 +42,13 @@ Bullet.prototype.draw = function(ctx, screenx, screeny) {
     ctx.fillRect(dx, dy, 8, 8);
 };
 
+var Task = function(type, target, fn) {
+    this.type = type;
+    this.target = target;
+    this.fn = fn;
+    this.proximity = type == "move" ? 0.5 : 2.0;
+};
+
 var Unit = function(team, x, y) {
     this.id = randint(10000, 1000000);
     this.team = team;
@@ -65,7 +72,7 @@ Unit.prototype.on_select = function(map) {
     this.buildings.forEach(function(type) {
         var button = document.createElement("button");
         $(button).html(type).click(this, function(self) {
-            map.selconstruct = new Building(self.team, 0, 0, type);
+            map.selconstruct = new Building(self.data.team, 0, 0, type);
         }).appendTo("#menudiv");
     }, this);
     $("#menudiv").css("visibility","visible");
@@ -75,76 +82,60 @@ Unit.prototype.hit = function(bullet, map) {
     map.add_floattext(bullet.power, this.x, this.y);
 };
 
-Unit.prototype.act = function(map) {
-    if (this.task == "attack" && this.target) map.add_bullet(this, this.target, "power");
-};
-
-Unit.prototype.set_task = function(task, target) {
-    this.task = task;
-    this.target = target;
-    if (this.target) {
+Unit.prototype.assign_task = function(type, target, fn) {
+    this.task = new Task(type, target, fn);
+    //this.target = target;
+    if (target) {
         this.destx = target.x;
         this.desty = target.y;
     }
 };
 
 Unit.prototype.find_target = function(map) {
+    var target;
     var targetlist = map.units.filter(function(u) {
         return u.id != this.id && u.team != this.team;
     }, this);
-    
     if (targetlist.length > 0)
-        this.target = targetlist.max(function(a) {
+        target = targetlist.max(function(a) {
             var dx = a.x - this.x;
             var dy = a.y - this.y;
             var delta = Math.sqrt(dx*dx+dy*dy);
             return -delta; //negative returns min instead of max
         }, this);
-    if (this.target) //todo: is this needed?
-        this.set_task("attack", this.target);
+    return target;
 };
 
 Unit.prototype.loop = function(map) {
     this.move(map);
-    if (!this.task && !this.target) this.find_target(map);
 };
 
 Unit.prototype.move = function(map) {
-    if (this.task == "move")
-        this.proximity = 0.5;
-    else if (this.task == "attack")
-        this.proximity = this.range;
-    
-    //todo: change destx,desty into function that returns targetx,targety
-    if (this.target) {
-        this.destx = this.target.x;
-        this.desty = this.target.y;
-    }
-    
     if (this.task) {
-        var dx = this.x - this.destx;
-        var dy = this.y - this.desty;
+        var destx = this.task.target.x;
+        var desty = this.task.target.y;
+        
+        var dx = this.x - destx;
+        var dy = this.y - desty;
         var delta = Math.sqrt(dx*dx + dy*dy); //pythagorean distance
         
-        if (delta < this.proximity) { //if unit reached destination
-            this.act(map);
+        if (delta < this.task.proximity) { //if unit reached destination
+            if (this.task.fn) this.task.fn(this, map);
             if (this.team == "player")
-                this.set_task("move", {"x": randint(0,64), "y": randint(0,64)});
-            else
-                this.set_task(0);
-            this.target = null;
+                this.assign_task("move", {"x": randint(0,64), "y": randint(0,64)}, function(unit, map) { console.log("heya"); });
+            else {
+                var target = this.find_target(map);
+                this.assign_task("attack", target, function(unit, map) {
+                    map.add_bullet(unit, target, "power");
+                });
+            }
         }
         else {
-            var angle = Math.atan2(this.y - this.desty, this.x - this.destx);
+            var angle = Math.atan2(this.y - desty, this.x - destx);
             this.x += -Math.cos(angle) * this.vel;
             this.y += -Math.sin(angle) * this.vel;
         }
     }
-};
-
-Unit.prototype.set_dest = function(tx, ty) {
-    this.destx = tx;
-    this.desty = ty;
 };
 
 Unit.prototype.in_range = function(x1, y1, x2, y2) {
@@ -174,11 +165,3 @@ Unit.prototype.draw_health = function(ctx, screenx, screeny) {
     ctx.fillStyle = healthcolors[c];
     ctx.fillRect(dx-8, dy-8, 32 * ratio, 6);
 };
-
-/*
--all units start off as base class
--they level up their abilities based on tasks they complete
--building units must gain experience building to become faster builders
--fighting units must gain experience fighting to become better fighters
--etc.
-*/

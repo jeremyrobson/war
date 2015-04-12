@@ -47,9 +47,8 @@ Game.prototype.mouse_up = function(canvas, mx, my, button) {
 };
 
 Game.prototype.mouse_move = function(canvas, mx, my, which) {
-    this.pressed = which == 1;
-    //if (canvas.id == "canvas")
-        //this.map.mouse_move(mx, my, this.pressed);
+    if (canvas.id == "canvas")
+        this.pressed = which == 1;
 };
 
 Game.prototype.draw = function(ctx, mmctx, mx, my) {
